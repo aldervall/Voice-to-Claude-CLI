@@ -215,8 +215,14 @@ if systemctl --user is-enabled ydotool.service &>/dev/null; then
     echo_success "ydotool daemon already enabled"
 else
     echo_info "Enabling ydotool daemon..."
-    systemctl --user enable --now ydotool.service
-    echo_success "ydotool daemon enabled"
+    if systemctl --user enable --now ydotool.service 2>/dev/null; then
+        echo_success "ydotool daemon enabled"
+    else
+        echo_warning "Failed to enable ydotool daemon"
+        echo_info "This is optional - the daemon will try to use alternative tools"
+        echo_info "To enable manually later:"
+        echo "  systemctl --user enable --now ydotool.service"
+    fi
 fi
 
 echo
@@ -232,10 +238,25 @@ if groups | grep -q '\binput\b'; then
     echo_success "Already in 'input' group"
 else
     echo_info "Adding $USER to 'input' group..."
-    sudo usermod -a -G input "$USER"
-    echo_success "Added to 'input' group"
-    echo_warning "You must LOG OUT and LOG BACK IN for group changes to take effect!"
-    NEEDS_LOGOUT=true
+
+    # Check if we have a TTY for sudo (required for password prompt)
+    if [ -t 0 ]; then
+        if sudo usermod -a -G input "$USER" 2>/dev/null; then
+            echo_success "Added to 'input' group"
+            echo_warning "You must LOG OUT and LOG BACK IN for group changes to take effect!"
+            NEEDS_LOGOUT=true
+        else
+            echo_warning "Failed to add user to 'input' group (sudo failed)"
+            echo_info "You may need to run this manually:"
+            echo "  sudo usermod -a -G input \$USER"
+            echo_info "Then log out and log back in"
+        fi
+    else
+        echo_warning "No TTY available - cannot run sudo interactively"
+        echo_info "Please run this command manually in a terminal:"
+        echo "  sudo usermod -a -G input $USER"
+        echo_info "Then log out and log back in"
+    fi
 fi
 
 echo
@@ -248,17 +269,21 @@ echo_header "╚═════════════════════�
 echo
 
 # Determine install location
-if [ "$PROJECT_ROOT" = "$HOME" ] || [ "$PROJECT_ROOT" = "$HOME/"* ]; then
-    # Already in home directory, install in place
-    INSTALL_DIR="$PROJECT_ROOT"
-    echo_info "Installing in place: $INSTALL_DIR"
-else
-    # Copy to ~/.local/voiceclaudecli
-    echo_info "Installing to: $INSTALL_DIR"
-    mkdir -p "$INSTALL_DIR"
-    cp -r "$PROJECT_ROOT"/* "$INSTALL_DIR/"
-    cd "$INSTALL_DIR"
-fi
+# Check if PROJECT_ROOT is inside HOME directory
+case "$PROJECT_ROOT" in
+    "$HOME"|"$HOME/"*)
+        # Already in home directory, install in place
+        INSTALL_DIR="$PROJECT_ROOT"
+        echo_info "Installing in place: $INSTALL_DIR"
+        ;;
+    *)
+        # Copy to ~/.local/voiceclaudecli
+        echo_info "Installing to: $INSTALL_DIR"
+        mkdir -p "$INSTALL_DIR"
+        cp -r "$PROJECT_ROOT"/* "$INSTALL_DIR/"
+        cd "$INSTALL_DIR"
+        ;;
+esac
 
 # Create virtual environment
 if [ ! -d "$INSTALL_DIR/venv" ]; then
@@ -318,6 +343,32 @@ exec python -m src.voice_to_claude "\$@"
 EOF
 chmod +x "$BIN_DIR/voiceclaudecli-interactive"
 echo_success "Created: $BIN_DIR/voiceclaudecli-interactive"
+
+# Create voiceclaudecli-stop-server launcher (manual shutdown)
+cat > "$BIN_DIR/voiceclaudecli-stop-server" <<EOF
+#!/bin/bash
+# Stop the whisper.cpp server to free up system resources
+
+echo "Stopping whisper.cpp server..."
+
+# Find and kill whisper-server processes
+if pgrep -f "whisper-server" > /dev/null; then
+    pkill -f "whisper-server"
+    sleep 1
+    if pgrep -f "whisper-server" > /dev/null; then
+        echo "✗ Failed to stop whisper-server (still running)"
+        echo "ℹ Try manually: pkill -9 -f whisper-server"
+        exit 1
+    else
+        echo "✓ whisper-server stopped successfully"
+        echo "ℹ Run 'voiceclaudecli-daemon' or press F12 to restart automatically"
+    fi
+else
+    echo "ℹ whisper-server is not running"
+fi
+EOF
+chmod +x "$BIN_DIR/voiceclaudecli-stop-server"
+echo_success "Created: $BIN_DIR/voiceclaudecli-stop-server"
 
 echo
 
@@ -423,6 +474,7 @@ echo "Available commands:"
 echo "  voiceclaudecli-daemon       - Start F12 hold-to-speak daemon"
 echo "  voiceclaudecli-input        - One-shot voice input"
 echo "  voiceclaudecli-interactive  - Interactive terminal mode"
+echo "  voiceclaudecli-stop-server  - Stop whisper.cpp server (save resources)"
 echo
 
 echo "To start the daemon as a service:"

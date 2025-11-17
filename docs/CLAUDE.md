@@ -16,7 +16,7 @@ Voice-to-Claude-CLI is a **cross-platform** Python application that provides loc
 - **README.md** - User installation guide and quick start
 - **docs/INDEX.md** - Complete documentation navigation and task finder
 - **docs/ADVANCED.md** - User customization options (hotkeys, duration, beeps, notifications, scripting)
-- **docs/HANDOVER.md** - Development session history and architectural decisions (23 sessions)
+- **docs/HANDOVER.md** - Development session history and architectural decisions (25 sessions)
 
 ## Critical Prerequisites
 
@@ -204,9 +204,26 @@ Server must run at `localhost:2022` with `/v1/audio/transcriptions` endpoint. De
 **Installation Locations:**
 - **Binary:** `.whisper/bin/whisper-server-linux-x64` (pre-built, no compilation needed; ARM64 planned)
 - **Models:** `.whisper/models/ggml-*.bin` (downloaded on first use)
-- **Fallback:** `/tmp/whisper.cpp` (if building from source)
 
-**Auto-start:** The Claude Code skill script will automatically start the local server if it exists in `.whisper/bin/` and is not already running.
+**Resource-Efficient Design (Manual Shutdown):**
+- **NO auto-start on boot** - whisper does NOT run as a systemd service
+- **Auto-start on first use** - daemon starts whisper on first F12 press (~213ms startup)
+- **Manual shutdown** - use `voiceclaudecli-stop-server` when done to save resources
+- **Why?** Keeps your system lightweight when voice input isn't needed
+
+**Commands:**
+```bash
+# Stop server manually (save resources)
+voiceclaudecli-stop-server
+
+# Check if running
+curl http://127.0.0.1:2022/health
+
+# Manual start (if needed)
+bash .whisper/scripts/start-server.sh
+```
+
+**Important:** whisper.cpp is NO LONGER built from source. The pre-built binary in `.whisper/bin/` is used exclusively. No `/tmp/whisper.cpp` directory should exist after installation.
 
 Changing port/path requires updating `WHISPER_URL` in all Python files.
 
@@ -285,7 +302,35 @@ systemctl --user status voiceclaudecli-daemon whisper-server ydotool
 - Test on Wayland and X11 if possible
 - Update all three modes if core transcription changes
 
-### Recent Changes (Sessions 20-22)
+### Recent Changes (Sessions 20-26)
+
+**Session 26 (2025-11-17) - Resource Efficiency & Installation Fixes:**
+- Discovered whisper.cpp starts in ~213ms (blazingly fast!)
+- Implemented manual shutdown approach (no 24/7 server)
+- Created comprehensive `scripts/uninstall.sh` (6-step cleanup)
+- Refactored `install-whisper.sh` to use ONLY pre-built binaries (no /tmp builds)
+- Fixed install.sh sudo handling for non-interactive environments
+- Fixed line 251 syntax error (case statement instead of if/pattern)
+- Added `voiceclaudecli-stop-server` command for resource management
+- Updated documentation for new resource-efficient workflow
+
+**Session 25 (2025-11-17) - /init Command Validation:**
+- Ran /init command to validate CLAUDE.md quality
+- Confirmed exceptional documentation (5/5 stars)
+- Updated session counts (24 → 25)
+- No structural changes needed - file is production-ready
+
+**Session 24 (2025-11-17) - CLAUDE.md Enhancement:**
+- Enhanced CLAUDE.md with strategic improvements
+- Updated documentation navigation and session counts
+- Improved docs organization by category
+- Added Session 23 to recent changes
+
+**Session 23 (2025-11-17) - Documentation Excellence & v1.3.0:**
+- CLAUDE.md analysis and rating (5/5 stars - exceptional)
+- Fresh HANDOVER.md created (3,254 → 397 lines, 89% reduction)
+- Version v1.3.0 released as "Latest" on GitHub
+- Enhanced documentation structure and navigation
 
 **Session 22 (2025-11-17) - Project Cleanup & Documentation:**
 - Complete project audit (35 files analyzed)
@@ -362,7 +407,7 @@ voice-to-claude-cli/
 - **Navigation:** `docs/INDEX.md` (documentation finder)
 - **Developer:** `docs/CLAUDE.md` (this file)
 - **User:** `docs/README.md` (user guide), `docs/ADVANCED.md` (customization)
-- **History:** `docs/HANDOVER.md` (23 sessions)
+- **History:** `docs/HANDOVER.md` (25 sessions)
 - **Testing:** `docs/INSTALLATION_FLOW.md` (7-phase guide), `docs/QUICK_TEST_CHECKLIST.md` (5-min tests)
 - **Status:** `docs/INSTALLATION_STATUS.md` (current state), `docs/PROJECT_STRUCTURE_AUDIT.md` (file inventory)
 

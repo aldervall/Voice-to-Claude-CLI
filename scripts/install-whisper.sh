@@ -1,10 +1,12 @@
 #!/bin/bash
-#
+
+#===============================================================================
 # whisper.cpp Auto-Installer
-# Uses pre-built binary or compiles from source if needed
+# Uses ONLY pre-built binaries - no source compilation!
 # Works standalone or as Claude Code plugin
 #
 # NOTE: We DO NOT use 'set -e' to allow graceful error handling
+#===============================================================================
 
 # Detect if running from Claude Code plugin or standalone
 if [ -n "$CLAUDE_PLUGIN_ROOT" ]; then
@@ -57,6 +59,7 @@ cat << "EOF"
 ║     🎙️  WHISPER.CPP AUTO-INSTALLER                  ║
 ║                                                       ║
 ║     Local AI Voice Recognition Engine                ║
+║     (Pre-built binaries - no compilation!)           ║
 ║                                                       ║
 ╚═══════════════════════════════════════════════════════╝
 EOF
@@ -71,160 +74,76 @@ case "$ARCH" in
         ;;
     aarch64|arm64)
         BINARY_NAME="whisper-server-linux-arm64"
+        echo_warning "ARM64 support is experimental - pre-built binary may not be available yet"
         ;;
     *)
-        echo_warning "Unsupported architecture: $ARCH"
-        BINARY_NAME=""
+        echo_error "Unsupported architecture: $ARCH"
+        echo_info "Supported architectures: x86_64, aarch64/arm64"
+        exit 1
         ;;
 esac
 
-# Check for pre-built binary and test if it actually works
+# Check for pre-built binary
 WHISPER_BINARY=""
-USE_PREBUILT=false
 
-if [ -n "$BINARY_NAME" ] && [ -f "$WHISPER_BIN_DIR/$BINARY_NAME" ]; then
-    echo_info "Found pre-built binary: $BINARY_NAME"
-    echo_info "Testing if binary works (checking shared libraries)..."
+if [ ! -f "$WHISPER_BIN_DIR/$BINARY_NAME" ]; then
+    echo_error "Pre-built binary not found: $WHISPER_BIN_DIR/$BINARY_NAME"
+    echo
+    echo_info "Expected binary location: $WHISPER_BIN_DIR/$BINARY_NAME"
+    echo_info "This usually means the project was not cloned correctly."
+    echo
+    echo_info "Troubleshooting:"
+    echo "  1. Check if .whisper/bin/ directory exists"
+    echo "  2. Clone the repository again: git clone <repo-url>"
+    echo "  3. Check git LFS is enabled if binary is in LFS"
+    echo
+    echo_error "Cannot continue without whisper-server binary"
+    exit 1
+fi
 
-    # Test if the binary can actually run (check for missing shared libs)
-    if ldd "$WHISPER_BIN_DIR/$BINARY_NAME" 2>&1 | grep -q "not found"; then
-        echo_warning "Pre-built binary has missing shared library dependencies!"
-        echo_info "Missing libraries:"
-        ldd "$WHISPER_BIN_DIR/$BINARY_NAME" 2>&1 | grep "not found" | sed 's/^/  /'
-        echo_info "Will build from source instead (creates self-contained binary)..."
-        USE_PREBUILT=false
-    else
-        echo_success "Pre-built binary is functional!"
-        WHISPER_BINARY="$WHISPER_BIN_DIR/$BINARY_NAME"
-        USE_PREBUILT=true
+echo_info "Found pre-built binary: $BINARY_NAME"
+echo_info "Testing if binary works (checking shared libraries)..."
+
+# Test if the binary can actually run (check for missing shared libs)
+if ldd "$WHISPER_BIN_DIR/$BINARY_NAME" 2>&1 | grep -q "not found"; then
+    echo_warning "Pre-built binary has missing shared library dependencies!"
+    echo
+    echo_error "Missing libraries:"
+    ldd "$WHISPER_BIN_DIR/$BINARY_NAME" 2>&1 | grep "not found" | sed 's/^/  /'
+    echo
+    echo_info "Your system is missing required libraries. Install them with:"
+    echo
+
+    # Detect distro and show appropriate command
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case "$ID" in
+            arch|manjaro|cachyos)
+                echo "  sudo pacman -S ffmpeg"
+                ;;
+            ubuntu|debian|pop|mint)
+                echo "  sudo apt install ffmpeg libgomp1"
+                ;;
+            fedora|rhel|centos)
+                echo "  sudo dnf install ffmpeg libgomp"
+                ;;
+            opensuse*)
+                echo "  sudo zypper install ffmpeg libgomp1"
+                ;;
+            *)
+                echo "  Install ffmpeg and OpenMP libraries for your distribution"
+                ;;
+        esac
     fi
+    echo
+    echo_error "Cannot continue until dependencies are installed"
+    exit 1
 else
-    echo_info "No pre-built binary found for $ARCH"
-    echo_info "Will build from source..."
-    USE_PREBUILT=false
+    echo_success "Pre-built binary is functional!"
+    WHISPER_BINARY="$WHISPER_BIN_DIR/$BINARY_NAME"
 fi
 
 echo
-
-# Build from source if not using pre-built binary
-if [ "$USE_PREBUILT" = false ]; then
-    # Check for required build tools
-    echo_info "Checking build dependencies..."
-
-    MISSING_DEPS=()
-
-    if ! command -v git &>/dev/null; then
-        MISSING_DEPS+=("git")
-    fi
-
-    if ! command -v make &>/dev/null; then
-        MISSING_DEPS+=("make")
-    fi
-
-    if ! command -v g++ &>/dev/null && ! command -v clang++ &>/dev/null; then
-        MISSING_DEPS+=("g++ or clang++")
-    fi
-
-    if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
-        echo_error "Missing required build tools: ${MISSING_DEPS[*]}"
-        echo
-        echo "Install them with:"
-
-        # Detect distro and show appropriate command
-        if [ -f /etc/os-release ]; then
-            . /etc/os-release
-            case "$ID" in
-                arch|manjaro|cachyos)
-                    echo "  sudo pacman -S git make gcc"
-                    ;;
-                ubuntu|debian|pop|mint)
-                    echo "  sudo apt install git build-essential"
-                    ;;
-                fedora|rhel|centos)
-                    echo "  sudo dnf install git make gcc-c++"
-                    ;;
-                opensuse*)
-                    echo "  sudo zypper install git make gcc-c++"
-                    ;;
-            esac
-        fi
-
-        exit 1
-    fi
-
-    echo_success "All build dependencies found"
-
-    WHISPER_DIR="/tmp/whisper.cpp"
-
-    # Clone or update whisper.cpp
-    if [ -d "$WHISPER_DIR" ]; then
-        echo_info "whisper.cpp directory exists: $WHISPER_DIR"
-        echo_info "Using existing directory"
-        cd "$WHISPER_DIR"
-        echo_info "Pulling latest changes..."
-        git pull || true  # Don't fail if no internet
-    else
-        echo_info "Cloning whisper.cpp..."
-        if ! git clone https://github.com/ggerganov/whisper.cpp "$WHISPER_DIR"; then
-            echo_error "Failed to clone whisper.cpp repository!"
-            echo
-            echo_info "Troubleshooting steps:"
-            echo "  1. Check internet connection: ping -c 3 github.com"
-            echo "  2. Check git is installed: git --version"
-            echo "  3. Try manually: git clone https://github.com/ggerganov/whisper.cpp $WHISPER_DIR"
-            echo
-            echo_error "Cannot continue without whisper.cpp source code"
-            exit 1
-        fi
-        cd "$WHISPER_DIR"
-        echo_success "Cloned whisper.cpp"
-    fi
-
-    echo
-
-    # Build whisper.cpp
-    echo "========================================"
-    echo "Building whisper.cpp"
-    echo "========================================"
-    echo
-
-    echo_info "Compiling... (this may take a few minutes)"
-    echo
-
-    # Build with make (simple, works on all platforms)
-    if make -j$(nproc) server 2>&1 | tee /tmp/whisper-build.log; then
-        echo_success "Build successful!"
-
-        # Copy binary to .whisper/bin/
-        mkdir -p "$WHISPER_BIN_DIR"
-
-        if ! cp "$WHISPER_DIR/build/bin/whisper-server" "$WHISPER_BIN_DIR/$BINARY_NAME"; then
-            echo_error "Failed to copy binary (build may have failed silently)"
-            echo_info "Check build output above and /tmp/whisper-build.log"
-            exit 1
-        fi
-
-        chmod +x "$WHISPER_BIN_DIR/$BINARY_NAME"
-        WHISPER_BINARY="$WHISPER_BIN_DIR/$BINARY_NAME"
-        echo_success "Binary copied to: $WHISPER_BINARY"
-    else
-        echo_error "Build failed!"
-        echo
-        echo_info "Troubleshooting steps:"
-        echo "  1. Check build log: cat /tmp/whisper-build.log"
-        echo "  2. Verify build tools: make --version && g++ --version"
-        echo "  3. Check disk space: df -h"
-        echo "  4. Try manually:"
-        echo "     cd $WHISPER_DIR"
-        echo "     make clean"
-        echo "     make server"
-        echo
-        echo_error "Cannot continue without whisper-server binary"
-        exit 1
-    fi
-
-    echo
-fi
 
 # Download model
 echo
@@ -241,7 +160,13 @@ if [ -f "$MODEL_PATH" ]; then
 else
     echo_info "Downloading $MODEL_NAME model (~142MB)..."
     bash "$PROJECT_ROOT/.whisper/scripts/download-model.sh" "$MODEL_NAME"
-    echo_success "Model downloaded"
+    if [ $? -eq 0 ] && [ -f "$MODEL_PATH" ]; then
+        echo_success "Model downloaded"
+    else
+        echo_error "Model download failed!"
+        echo_info "Try manually: bash $PROJECT_ROOT/.whisper/scripts/download-model.sh $MODEL_NAME"
+        exit 1
+    fi
 fi
 
 echo
@@ -272,6 +197,7 @@ else
     SERVER_PID=$!
 
     # Wait for server to start
+    echo_info "Waiting for server to initialize..."
     sleep 3
 
     # Test server health
@@ -283,6 +209,7 @@ else
         wait $SERVER_PID 2>/dev/null || true
     else
         echo_error "Server health check failed"
+        echo_info "Check if server is actually running: ps aux | grep whisper-server"
         kill $SERVER_PID 2>/dev/null || true
         exit 1
     fi
@@ -290,97 +217,15 @@ fi
 
 echo
 
-# Create systemd service
+# SKIP systemd service creation - daemon will auto-start whisper on demand
 echo "========================================"
-echo "Creating systemd Service"
+echo "Configuration Complete"
 echo "========================================"
 echo
 
-SYSTEMD_USER_DIR="$HOME/.config/systemd/user"
-mkdir -p "$SYSTEMD_USER_DIR"
-
-cat > "$SYSTEMD_USER_DIR/whisper-server.service" <<EOF
-[Unit]
-Description=whisper.cpp Server for Local Speech-to-Text
-After=default.target
-
-[Service]
-Type=simple
-ExecStart=$WHISPER_BINARY \\
-    --model $MODEL_PATH \\
-    --host 127.0.0.1 \\
-    --port $PORT \\
-    --inference-path "/v1/audio/transcriptions" \\
-    --threads 4 \\
-    --processors 1 \\
-    --convert \\
-    --print-progress
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
-EOF
-
-echo_success "Created: $SYSTEMD_USER_DIR/whisper-server.service"
-
-# Reload systemd
-systemctl --user daemon-reload
-echo_success "Systemd daemon reloaded"
-
-echo
-
-# Ask to start service
-if [ "$INTERACTIVE" = "true" ]; then
-    read -p "Start whisper server now? [Y/n]: " START_NOW
-    START_NOW=${START_NOW:-y}
-else
-    # Non-interactive mode: default to yes
-    START_NOW="${AUTO_START_SERVER:-y}"
-    echo_info "Non-interactive mode: Starting whisper server (override with AUTO_START_SERVER=n)"
-fi
-
-if [[ "$START_NOW" =~ ^[Yy] ]]; then
-    echo_info "Starting whisper-server..."
-    systemctl --user start whisper-server
-    echo_success "Server started"
-
-    # Wait a moment for startup
-    sleep 2
-
-    # Check status
-    if systemctl --user is-active whisper-server &>/dev/null; then
-        echo_success "Server is running!"
-
-        # Test health endpoint
-        if curl -s http://127.0.0.1:$PORT/health | grep -q "ok"; then
-            echo_success "Health check passed!"
-        else
-            echo_warning "Server running but health check failed"
-        fi
-    else
-        echo_warning "Server failed to start, check logs:"
-        echo "  journalctl --user -u whisper-server -n 50"
-    fi
-fi
-
-echo
-
-# Ask to enable auto-start
-if [ "$INTERACTIVE" = "true" ]; then
-    read -p "Enable auto-start on login? [Y/n]: " ENABLE_AUTO
-    ENABLE_AUTO=${ENABLE_AUTO:-y}
-else
-    # Non-interactive mode: default to yes
-    ENABLE_AUTO="${AUTO_ENABLE_SERVICE:-y}"
-    echo_info "Non-interactive mode: Enabling auto-start (override with AUTO_ENABLE_SERVICE=n)"
-fi
-
-if [[ "$ENABLE_AUTO" =~ ^[Yy] ]]; then
-    systemctl --user enable whisper-server
-    echo_success "Auto-start enabled"
-fi
-
+echo_info "IMPORTANT: whisper-server will NOT auto-start on boot"
+echo_info "Instead, the daemon will auto-start it when you first press F12"
+echo_info "This saves system resources when voice input is not in use"
 echo
 
 # Final summary
@@ -389,34 +234,23 @@ echo "whisper.cpp Installation Complete!"
 echo "========================================"
 echo
 
-if [ "$USE_PREBUILT" = true ]; then
-    echo_success "Using pre-built binary (no compilation needed!)"
-else
-    echo_success "Built from source"
-fi
+echo_success "Using pre-built binary (no compilation needed!)"
 echo_success "Binary: $WHISPER_BINARY"
 echo_success "Model: $MODEL_PATH"
 echo_success "Port: $PORT"
 echo
 
-echo "Service management:"
-echo "  systemctl --user start whisper-server    # Start server"
-echo "  systemctl --user stop whisper-server     # Stop server"
-echo "  systemctl --user status whisper-server   # Check status"
-echo "  systemctl --user enable whisper-server   # Auto-start on login"
+echo "Manual control:"
+echo "  Start:  bash $PROJECT_ROOT/.whisper/scripts/start-server.sh"
+echo "  Stop:   voiceclaudecli-stop-server  (created by main installer)"
+echo "  Health: curl http://127.0.0.1:$PORT/health"
 echo
 
-echo "Logs:"
-echo "  journalctl --user -u whisper-server -f"
+echo "Automatic startup:"
+echo "  • The daemon (voice_holdtospeak.py) will auto-start whisper on first F12 press"
+echo "  • Startup time: ~213ms (nearly instant!)"
+echo "  • Use 'voiceclaudecli-stop-server' when done to save resources"
 echo
 
-echo "Health check:"
-echo "  curl http://127.0.0.1:$PORT/health"
-echo
-
-echo "Manual start (if needed):"
-echo "  bash $PROJECT_ROOT/.whisper/scripts/start-server.sh"
-echo
-
-echo "To test transcription, use voiceclaudecli-daemon or voiceclaudecli-input!"
+echo_success "Ready to use! Test with voiceclaudecli-daemon or voiceclaudecli-input"
 echo

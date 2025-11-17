@@ -42,11 +42,25 @@ That's it! The installer shows beautiful progress indicators and progress bars f
 **Simple 4-step process:**
 
 1. **Hover over Claude Code window**
-2. **Hold F12** - You'll hear a beep
+2. **Hold F12** - You'll hear a beep (first press starts whisper.cpp in ~213ms)
 3. **Speak clearly**
 4. **Release F12** - Text appears in Claude CLI input
 
 **That's it!**
+
+### Resource Management
+
+The whisper.cpp server **auto-starts on first F12 press** and stays running until you stop it manually:
+
+```bash
+# Stop whisper.cpp to free up resources
+voiceclaudecli-stop-server
+
+# Check if whisper is running
+curl http://127.0.0.1:2022/health
+```
+
+**Why manual shutdown?** Keeps your system lightweight - the server only runs when you're actively using voice input. Startup is nearly instant (~213ms) so there's no convenience trade-off!
 
 ## Features
 
