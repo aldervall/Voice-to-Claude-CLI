@@ -2,6 +2,14 @@
 
 A **cross-platform** local voice transcription tool that converts speech to text using whisper.cpp. Completely private - no API keys or cloud services required.
 
+## Quick Install (Claude Code Plugin)
+
+```bash
+/plugin add aldervall/Voice-to-Claude-CLI
+```
+
+Then run `/voice-install` and you're done! Say "record my voice" to Claude to start using it.
+
 ## Features
 
 - **🌐 Cross-Platform** - Works on Arch, Ubuntu, Fedora, OpenSUSE
