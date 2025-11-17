@@ -44,8 +44,8 @@ source venv/bin/activate
 
 For new installations, see README.md or run:
 ```bash
-bash scripts/install.sh  # Automated installer (note: now in scripts/ directory)
-/voice-install           # From Claude Code
+bash scripts/install.sh  # Automated installer
+/voice:voice-install     # From Claude Code (note: command prefix is /voice: not /voice-)
 ```
 
 ## Running and Testing
@@ -124,8 +124,10 @@ The `skills/voice/` directory contains a Skill that enables Claude to autonomous
 
 ### Slash Commands Available
 
-- `/voice-install` - Automated installation wizard
-- `/voice` - Quick voice input (types into Claude)
+- `/voice:voice-install` - Automated installation wizard (7-step guided installation)
+- `/voice:voice` - Quick voice input (one-shot transcription, types into active window)
+
+**Note:** Commands use `/voice:` prefix (plugin name is "voice")
 
 ## Architecture Overview
 
@@ -247,9 +249,10 @@ systemctl --user status voiceclaudecli-daemon whisper-server ydotool
 ### Service Name Inconsistency
 
 **Service naming:**
-- Service file: `voice-holdtospeak.service` (in repo)
+- Service file: `voice-holdtospeak.service` (in repo at `config/`)
 - Installed service: `voiceclaudecli-daemon.service` (by install.sh)
 - Both run `voice_holdtospeak.py`
+- **Important:** Always use `voiceclaudecli-daemon` when checking/restarting the installed service
 
 ### Code Change Impact Map
 
@@ -270,9 +273,20 @@ systemctl --user status voiceclaudecli-daemon whisper-server ydotool
 - Test on Wayland and X11 if possible
 - Update all three modes if core transcription changes
 
+### Recent Changes (Sessions 20-21)
+
+**Critical Fixes Applied:**
+- Plugin discovery fixed (plugin.json moved to root)
+- Installation scripts no longer use `set -e` (graceful error handling)
+- Plugin name shortened to "voice" (commands: `/voice:voice-install`, `/voice:voice`)
+- Added ldd test for pre-built whisper binary (commit e315fcb)
+- Automatic fallback to source build if shared libraries missing
+
+**Known Issue:** Plugin installations before 2025-11-17 have old scripts without ldd test. See `docs/INSTALLATION_STATUS.md` for refresh options.
+
 ### Handover
 
-When user says "handover", update `HANDOVER.md` with what was accomplished and decisions made. See `HANDOVER.md` for session history.
+When user says "handover", update `docs/HANDOVER.md` with what was accomplished and decisions made. See `docs/HANDOVER.md` for complete session history.
 
 ## File Organization
 
@@ -319,13 +333,13 @@ voice-to-claude-cli/
 - `.whisper/models/` - Whisper models (git-ignored, 142 MB)
 - `.whisper/scripts/` - Helper scripts (download, start, install)
 
-**Plugin Marketplace:** `.claude-plugin/marketplace.json` (marketplace catalog), `.claude-plugin/plugin.json` (plugin metadata)
+**Plugin Discovery:** `plugin.json` (at root for Claude Code discovery), `.claude-plugin/marketplace.json` (for trusted marketplace installation)
 
 **Claude Integration:** `skills/voice/` (Skill with auto-start capability), `commands/` (slash commands)
 
 **Configuration:** `config/voice-holdtospeak.service` (systemd template), `requirements.txt`, `.gitignore`
 
-**Docs:** `docs/CLAUDE.md` (dev guide), `docs/README.md` (user docs), `docs/HANDOVER.md` (session history), `docs/archive/` (old sessions)
+**Docs:** `docs/CLAUDE.md` (this file), `docs/README.md` (user guide), `docs/HANDOVER.md` (session history), `docs/INSTALLATION_FLOW.md` (testing guide), `docs/QUICK_TEST_CHECKLIST.md` (5-min tests), `docs/INSTALLATION_STATUS.md` (current state), `HANDOVER_SUMMARY.md` (latest handover)
 
 **Generated files:**
 - `~/.local/bin/voiceclaudecli-*` (launchers)
