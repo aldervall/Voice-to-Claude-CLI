@@ -146,7 +146,7 @@ esac
 
 # Install system dependencies
 echo "========================================"
-echo "Step 1: Install System Dependencies"
+echo "Step 1/7: Install System Dependencies"
 echo "========================================"
 echo
 echo_info "Installing: $PACKAGES"
@@ -159,7 +159,7 @@ echo
 
 # Enable ydotool daemon (required for keyboard automation)
 echo "========================================"
-echo "Step 2: Enable ydotool Daemon"
+echo "Step 2/7: Enable ydotool Daemon"
 echo "========================================"
 echo
 
@@ -175,7 +175,7 @@ echo
 
 # Add user to input group (required for keyboard event monitoring)
 echo "========================================"
-echo "Step 3: Add User to 'input' Group"
+echo "Step 3/7: Add User to 'input' Group"
 echo "========================================"
 echo
 
@@ -193,7 +193,7 @@ echo
 
 # Install Python virtual environment and dependencies
 echo "========================================"
-echo "Step 4: Install Python Dependencies"
+echo "Step 4/7: Install Python Dependencies"
 echo "========================================"
 echo
 
@@ -220,10 +220,11 @@ else
 fi
 
 # Install Python packages
-echo_info "Installing Python packages..."
+echo_info "Installing Python packages (this may take a minute)..."
 source "$INSTALL_DIR/venv/bin/activate"
 pip install --upgrade pip -q
-pip install -r "$INSTALL_DIR/requirements.txt" -q
+echo "ℹ Installing dependencies..."
+pip install -r "$INSTALL_DIR/requirements.txt" --progress-bar on
 deactivate
 echo_success "Python packages installed"
 
@@ -231,7 +232,7 @@ echo
 
 # Create launcher scripts in ~/.local/bin
 echo "========================================"
-echo "Step 5: Create Launcher Scripts"
+echo "Step 5/7: Create Launcher Scripts"
 echo "========================================"
 echo
 
@@ -271,7 +272,7 @@ echo
 
 # Install systemd service
 echo "========================================"
-echo "Step 6: Install systemd Service"
+echo "Step 6/7: Install systemd Service"
 echo "========================================"
 echo
 
@@ -304,11 +305,12 @@ echo
 
 # Ask about whisper.cpp installation
 echo "========================================"
-echo "Step 7: whisper.cpp Server (Optional)"
+echo "Step 7/7: whisper.cpp Server"
 echo "========================================"
 echo
 
-echo_info "Voice-to-Claude-CLI requires whisper.cpp server running on port 2022"
+echo_info "Voice-to-Claude-CLI requires whisper.cpp server for transcription"
+echo_info "Model download: ~142 MB (one-time)"
 echo
 
 if command -v whisper-server &>/dev/null || [ -f "/tmp/whisper.cpp/build/bin/whisper-server" ]; then

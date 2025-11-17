@@ -16,9 +16,12 @@ echo "Target directory: $MODELS_DIR"
 # Download using whisper.cpp's download script
 cd "$MODELS_DIR"
 
-# Download the model
-curl -L -o "ggml-${MODEL}.bin" \
+# Download the model with progress bar
+echo "ℹ Downloading whisper model (~142 MB)"
+echo "ℹ This may take 30-60 seconds depending on your connection..."
+echo ""
+curl --progress-bar -L -o "ggml-${MODEL}.bin" \
     "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-${MODEL}.bin"
-
+echo ""
 echo "✓ Model downloaded: ggml-${MODEL}.bin"
 ls -lh "$MODELS_DIR/ggml-${MODEL}.bin"
