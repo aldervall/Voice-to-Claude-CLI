@@ -15,7 +15,7 @@
   },
   "plugins": [
     {
-      "name": "voice-transcription",
+      "name": "voice",
       "source": "./",
       "description": "Local voice-to-text transcription using whisper.cpp with privacy-first design. Record and transcribe speech completely offline with no API keys or cloud services required.",
       "version": "1.0.0",
