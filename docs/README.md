@@ -6,17 +6,30 @@ Local voice transcription for Claude Code using whisper.cpp. 100% private - no A
 
 ## Installation
 
-**1. Add the plugin in Claude Code:**
+### Quick Install (2 commands!)
+
+**Step 1: Add the marketplace in Claude Code**
+
+Open Claude Code and run:
 ```bash
-/plugin add aldervall/Voice-to-Claude-CLI
+/plugin
 ```
 
-**2. Run the installer:**
-```bash
-/voice-install
+Select "Add Marketplace" and enter:
+```
+aldervall/Voice-to-Claude-CLI
 ```
 
-That's it! The installer shows progress bars for model download and system setup.
+![Add Marketplace](docs/images/Plugin.AddMarket.png)
+
+Then select `voice` and install!
+
+**Step 2: Run the installer**
+```bash
+/voice:voice-install
+```
+
+That's it! The installer shows beautiful progress indicators and progress bars for the ~142MB model download.
 
 ## Usage
 
