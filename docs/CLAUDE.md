@@ -353,11 +353,46 @@ voice-to-claude-cli/
 
 **Error Handling:** All components catch exceptions gracefully, provide helpful install instructions, prevent daemon crashes
 
+## Installation Script Architecture
+
+**Key Principle:** NO `set -e` in user-facing scripts. All error handling must be explicit with helpful recovery steps.
+
+**Installation Flow (7 Steps):**
+1. System Dependencies (distro-specific packages)
+2. Python Virtual Environment (`venv/`)
+3. Python Packages (`requirements.txt`)
+4. User Groups (`input` group for evdev access)
+5. Launcher Scripts (`~/.local/bin/voiceclaudecli-*`)
+6. Systemd Services (daemon + whisper-server)
+7. whisper.cpp (pre-built binary with ldd test, fallback to source build)
+
+**Error Handling Pattern:**
+```bash
+if ! command_that_might_fail; then
+    echo_error "What failed"
+    echo_info "Troubleshooting steps:"
+    echo "  1. Check X"
+    echo "  2. Try Y"
+    # Continue or exit depending on criticality
+fi
+```
+
+**Visual Standards:**
+- ASCII art banners with box-drawing characters
+- Color-coded messages (echo_info, echo_success, echo_warning, echo_error)
+- Progress indicators (1/7, 2/7, etc.)
+- Platform-specific troubleshooting
+
 ## Quick Reference Card
 
 **Check if system is ready:**
 ```bash
 curl http://127.0.0.1:2022/health && python -m src.platform_detect
+```
+
+**One-liner health check:**
+```bash
+curl -s http://127.0.0.1:2022/health && systemctl --user is-active whisper-server ydotool && ls ~/.local/bin/voiceclaudecli-* && echo "✓ System healthy"
 ```
 
 **Start whisper server (multiple options):**
