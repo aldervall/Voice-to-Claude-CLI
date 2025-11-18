@@ -257,52 +257,52 @@ if [ -z "$MISSING_PACKAGES" ]; then
     echo_success "All system packages already installed ✓"
     echo_info "Packages: $PACKAGES"
 else
-    echo_step "Installing missing packages:$MISSING_PACKAGES"
-    echo_info "This may require sudo password..."
+    echo_step "Missing packages detected:$MISSING_PACKAGES"
     echo
 
-    # Try to install packages with error handling
-    error_output=$($INSTALL_CMD $MISSING_PACKAGES 2>&1)
-    exit_code=$?
-
-    if [ $exit_code -ne 0 ]; then
-        echo_error "Failed to install system packages!"
+    # Check if we can run sudo (interactive mode with TTY)
+    if [ "$INTERACTIVE" = "true" ] && [ -t 0 ]; then
+        echo_info "Attempting to install packages (may require sudo password)..."
         echo
-        echo_info "Troubleshooting steps:"
+
+        # Try to install packages with error handling
+        error_output=$($INSTALL_CMD $MISSING_PACKAGES 2>&1)
+        exit_code=$?
+
+        if [ $exit_code -ne 0 ]; then
+            echo_error "Package installation failed!"
+            echo
+            echo_info "Please install manually:"
+            echo "  $INSTALL_CMD $MISSING_PACKAGES"
+            echo
+            echo_warning "Installation will continue, but some features may not work"
+        else
+            echo_success "System dependencies installed!"
+        fi
+    else
+        # Non-interactive mode: Don't attempt sudo, just show instructions
+        echo_warning "Running in non-interactive mode - cannot use sudo"
+        echo
+        echo_info "📋 Please install these packages manually:"
+        echo
         case "$DISTRO" in
             arch|manjaro|cachyos|endeavouros)
-                echo "  1. Update package database: sudo pacman -Sy"
-                echo "  2. Check package availability: pacman -Ss ydotool python-pip"
-                echo "  3. Try manually: $INSTALL_CMD $PACKAGES"
+                echo "  sudo pacman -S --needed$MISSING_PACKAGES"
                 ;;
             ubuntu|debian|pop|mint|elementary)
-                echo "  1. Update package list: sudo apt-get update"
-                echo "  2. Check package availability: apt-cache search ydotool python3-pip"
-                echo "  3. Try manually: $INSTALL_CMD $PACKAGES"
+                echo "  sudo apt-get install$MISSING_PACKAGES"
                 ;;
             fedora|rhel|centos|rocky|almalinux)
-                echo "  1. Check package availability: dnf search ydotool python3-pip"
-                echo "  2. Try manually: $INSTALL_CMD $PACKAGES"
+                echo "  sudo dnf install$MISSING_PACKAGES"
                 ;;
             opensuse*|sles)
-                echo "  1. Check package availability: zypper search ydotool python3-pip"
-                echo "  2. Try manually: $INSTALL_CMD $PACKAGES"
+                echo "  sudo zypper install$MISSING_PACKAGES"
                 ;;
         esac
         echo
-
-        # Offer error reporting if function is available
-        if type handle_installation_error &>/dev/null; then
-            handle_installation_error $exit_code "$CURRENT_PHASE" "$error_output"
-        else
-            echo_warning "Installation will continue, but some features may not work"
-            echo_warning "Press Ctrl+C to abort, or Enter to continue anyway..."
-            if [ "$INTERACTIVE" = "true" ]; then
-                read -r
-            fi
-        fi
-    else
-        echo_success "System dependencies installed!"
+        echo_warning "Some features will not work until these packages are installed"
+        echo_info "Continuing with installation..."
+        echo
     fi
 fi
 echo
@@ -340,25 +340,32 @@ echo
 if groups | grep -q '\binput\b'; then
     echo_success "Already in 'input' group"
 else
-    echo_info "Adding $USER to 'input' group..."
+    echo_info "Need to add $USER to 'input' group (required for F12 key detection)"
+    echo
 
-    # Check if we have a TTY for sudo (required for password prompt)
-    if [ -t 0 ]; then
+    # Check if we can run sudo (interactive mode with TTY)
+    if [ "$INTERACTIVE" = "true" ] && [ -t 0 ]; then
+        echo_info "Attempting to add user to 'input' group (may require sudo password)..."
         if sudo usermod -a -G input "$USER" 2>/dev/null; then
             echo_success "Added to 'input' group"
-            echo_warning "You must LOG OUT and LOG BACK IN for group changes to take effect!"
+            echo_warning "⚠️  You MUST log out and log back in for this to take effect!"
             NEEDS_LOGOUT=true
         else
             echo_warning "Failed to add user to 'input' group (sudo failed)"
-            echo_info "You may need to run this manually:"
-            echo "  sudo usermod -a -G input \$USER"
+            echo
+            echo_info "📋 Please run this manually:"
+            echo "  sudo usermod -a -G input $USER"
             echo_info "Then log out and log back in"
         fi
     else
-        echo_warning "No TTY available - cannot run sudo interactively"
-        echo_info "Please run this command manually in a terminal:"
+        # Non-interactive mode: Don't attempt sudo, just show instructions
+        echo_warning "Running in non-interactive mode - cannot use sudo"
+        echo
+        echo_info "📋 Please run this command manually in a terminal:"
         echo "  sudo usermod -a -G input $USER"
-        echo_info "Then log out and log back in"
+        echo
+        echo_info "Then log out and log back in for changes to take effect"
+        echo_warning "F12 hold-to-speak mode will NOT work until this is done"
     fi
 fi
 

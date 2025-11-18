@@ -105,39 +105,71 @@ echo_info "Found pre-built binary: $BINARY_NAME"
 echo_info "Testing if binary works (checking shared libraries)..."
 
 # Test if the binary can actually run (check for missing shared libs)
-if ldd "$WHISPER_BIN_DIR/$BINARY_NAME" 2>&1 | grep -q "not found"; then
+MISSING_LIBS=$(ldd "$WHISPER_BIN_DIR/$BINARY_NAME" 2>&1 | grep "not found")
+
+if [ -n "$MISSING_LIBS" ]; then
     echo_warning "Pre-built binary has missing shared library dependencies!"
     echo
     echo_error "Missing libraries:"
-    ldd "$WHISPER_BIN_DIR/$BINARY_NAME" 2>&1 | grep "not found" | sed 's/^/  /'
-    echo
-    echo_info "Your system is missing required libraries. Install them with:"
+    echo "$MISSING_LIBS" | sed 's/^/  /'
     echo
 
-    # Detect distro and show appropriate command
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        case "$ID" in
-            arch|manjaro|cachyos)
-                echo "  sudo pacman -S ffmpeg"
-                ;;
-            ubuntu|debian|pop|mint)
-                echo "  sudo apt install ffmpeg libgomp1"
-                ;;
-            fedora|rhel|centos)
-                echo "  sudo dnf install ffmpeg libgomp"
-                ;;
-            opensuse*)
-                echo "  sudo zypper install ffmpeg libgomp1"
-                ;;
-            *)
-                echo "  Install ffmpeg and OpenMP libraries for your distribution"
-                ;;
-        esac
+    # Check if these are whisper.cpp-specific libs (libwhisper, libggml)
+    if echo "$MISSING_LIBS" | grep -qE "libwhisper|libggml"; then
+        echo_warning "Pre-built binary is dynamically linked and missing whisper.cpp libraries"
+        echo_info "This binary needs to be rebuilt with static linking or proper bundling"
+        echo
+        echo_info "🔧 FALLBACK: Building whisper.cpp from source instead..."
+        echo_info "This will create a working binary optimized for your system"
+        echo
+
+        # Trigger source build
+        if [ -f "$PROJECT_ROOT/.whisper/scripts/install-binary.sh" ]; then
+            echo_step "Running source build script..."
+            bash "$PROJECT_ROOT/.whisper/scripts/install-binary.sh"
+
+            if [ $? -eq 0 ] && [ -f "$WHISPER_BIN_DIR/$BINARY_NAME" ]; then
+                echo_success "Successfully built whisper-server from source!"
+                WHISPER_BINARY="$WHISPER_BIN_DIR/$BINARY_NAME"
+            else
+                echo_error "Source build failed! Please check build requirements"
+                echo_info "Required: git, make, cmake, g++ or clang++"
+                exit 1
+            fi
+        else
+            echo_error "Fallback build script not found: .whisper/scripts/install-binary.sh"
+            exit 1
+        fi
+    else
+        # System libraries missing (not whisper.cpp-specific)
+        echo_info "Your system is missing standard libraries. Install them with:"
+        echo
+
+        # Detect distro and show appropriate command
+        if [ -f /etc/os-release ]; then
+            . /etc/os-release
+            case "$ID" in
+                arch|manjaro|cachyos|endeavouros)
+                    echo "  sudo pacman -S ffmpeg"
+                    ;;
+                ubuntu|debian|pop|mint)
+                    echo "  sudo apt install ffmpeg libgomp1"
+                    ;;
+                fedora|rhel|centos)
+                    echo "  sudo dnf install ffmpeg libgomp"
+                    ;;
+                opensuse*)
+                    echo "  sudo zypper install ffmpeg libgomp1"
+                    ;;
+                *)
+                    echo "  Install ffmpeg and OpenMP libraries for your distribution"
+                    ;;
+            esac
+        fi
+        echo
+        echo_error "Cannot continue until system dependencies are installed"
+        exit 1
     fi
-    echo
-    echo_error "Cannot continue until dependencies are installed"
-    exit 1
 else
     echo_success "Pre-built binary is functional!"
     WHISPER_BINARY="$WHISPER_BIN_DIR/$BINARY_NAME"
