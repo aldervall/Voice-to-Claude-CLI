@@ -24,9 +24,18 @@ from evdev import ecodes
 TRIGGER_KEY = ecodes.KEY_F12  # F12 key
 MIN_RECORDING_DURATION = 0.3  # Minimum seconds to avoid false triggers
 BEEP_ENABLED = True
+
+# Audio feedback options - choose one:
+# Option 1: Use WAV files (set BEEP_USE_WAV_FILES = True)
+BEEP_USE_WAV_FILES = True
+BEEP_START_SOUND = os.path.join(os.path.dirname(__file__), '../sounds/start.wav')
+BEEP_STOP_SOUND = None  # None = use frequency tone for stop beep
+
+# Option 2: Use frequency tones (set BEEP_USE_WAV_FILES = False)
 BEEP_START_FREQUENCY = 800  # Hz - High beep on recording start
 BEEP_STOP_FREQUENCY = 400  # Hz - Low beep on recording stop
 BEEP_DURATION = 0.1  # seconds
+
 CLIPBOARD_PASTE_DELAY = 0.15  # seconds - Wait after clipboard copy before paste
 NOTIFICATION_PREVIEW_LENGTH = 50  # characters - Preview length in notifications
 NOTIFICATION_TIMEOUT = 5000  # milliseconds
@@ -181,31 +190,37 @@ class HoldToSpeakDaemon:
 
         return keyboard_devices
 
-    def play_beep(self, frequency: int = BEEP_START_FREQUENCY, duration: float = BEEP_DURATION):
-        """Play a beep sound for feedback"""
+    def play_beep(self, sound_file: str = None, frequency: int = BEEP_START_FREQUENCY, duration: float = BEEP_DURATION):
+        """Play a beep sound for feedback - either WAV file or frequency tone"""
         if not BEEP_ENABLED:
             return
 
         try:
-            # Generate beep using paplay (PulseAudio)
-            # Use ffmpeg to generate tone
-            subprocess.run([
-                'paplay',
-                '--raw',
-                '--format=s16le',
-                '--rate=16000',
-                '--channels=1',
-                '/dev/stdin'
-            ], input=self._generate_tone(frequency, duration, SAMPLE_RATE),
-               timeout=1,
-               check=False,
-               stderr=subprocess.DEVNULL)
+            # Option 1: Play WAV file if using WAV files and file exists
+            if BEEP_USE_WAV_FILES and sound_file and os.path.exists(sound_file):
+                subprocess.run(['paplay', sound_file],
+                              timeout=1,
+                              check=False,
+                              stderr=subprocess.DEVNULL)
+            # Option 2: Generate frequency tone (fallback or when WAV files disabled)
+            else:
+                subprocess.run([
+                    'paplay',
+                    '--raw',
+                    '--format=s16le',
+                    '--rate=16000',
+                    '--channels=1',
+                    '/dev/stdin'
+                ], input=self._generate_tone(frequency, duration, SAMPLE_RATE),
+                   timeout=1,
+                   check=False,
+                   stderr=subprocess.DEVNULL)
         except (subprocess.TimeoutExpired, FileNotFoundError):
-            # Silently fail if paplay not available
+            # Silently fail if paplay not available or file missing
             pass
 
     def _generate_tone(self, frequency, duration, sample_rate):
-        """Generate a simple sine wave tone"""
+        """Generate a simple sine wave tone (fallback for when WAV files not used)"""
         samples = int(sample_rate * duration)
         t = np.linspace(0, duration, samples, False)
         tone = np.sin(2 * np.pi * frequency * t)
@@ -271,7 +286,7 @@ class HoldToSpeakDaemon:
 
         if event.value == 1:  # Key pressed
             print("\n🎤 Recording... (hold F12)")
-            self.play_beep(BEEP_START_FREQUENCY, BEEP_DURATION)  # High beep
+            self.play_beep(sound_file=BEEP_START_SOUND, frequency=BEEP_START_FREQUENCY, duration=BEEP_DURATION)
             self.recorder.start()
             # Show notification with long timeout (will be replaced when done)
             self.show_notification('Voice Input', 'Recording...',
@@ -279,7 +294,7 @@ class HoldToSpeakDaemon:
 
         elif event.value == 0:  # Key released
             print("⏹️  Recording stopped")
-            self.play_beep(BEEP_STOP_FREQUENCY, BEEP_DURATION)  # Low beep
+            self.play_beep(sound_file=BEEP_STOP_SOUND, frequency=BEEP_STOP_FREQUENCY, duration=BEEP_DURATION)
 
             # Stop recording and get audio data
             audio_data = self.recorder.stop()

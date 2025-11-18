@@ -174,23 +174,72 @@ systemctl --user restart voiceclaudecli-daemon
 
 ### Audio Beeps
 
-**Disable beeps:**
+Voice-to-Claude-CLI provides audio feedback when you start/stop recording. You can choose between **WAV files** (custom sounds) or **frequency tones** (simple beeps).
 
-Edit `src/voice_holdtospeak.py`:
+#### Using WAV Files (Custom Sounds)
 
-```python
-# Find the play_beep() calls and comment them out
-# self.play_beep(BEEP_START_FREQUENCY, BEEP_DURATION)  # Disabled
+**Default behavior:** The start beep now uses a WAV file (`sounds/start.wav`) for a more pleasant audio experience.
+
+**To use your own WAV files:**
+
+1. Place your WAV files in the `sounds/` directory:
+   ```bash
+   cp my-start-sound.wav sounds/start.wav
+   cp my-stop-sound.wav sounds/stop.wav
+   ```
+
+2. Edit `src/voice_holdtospeak.py` (lines 28-32):
+   ```python
+   BEEP_USE_WAV_FILES = True
+   BEEP_START_SOUND = os.path.join(os.path.dirname(__file__), '../sounds/start.wav')
+   BEEP_STOP_SOUND = os.path.join(os.path.dirname(__file__), '../sounds/stop.wav')
+   ```
+
+3. Restart the daemon:
+   ```bash
+   systemctl --user restart voiceclaudecli-daemon
+   ```
+
+**WAV file requirements:**
+- Format: Any WAV format supported by `paplay` (PCM, 16-bit recommended)
+- Sample rate: Any (44.1kHz works well)
+- Channels: Mono or stereo
+- Duration: Keep short (100-500ms recommended for quick feedback)
+
+**To trim a WAV file:**
+```bash
+# Using ffmpeg (trim to first 150ms)
+ffmpeg -i sounds/start.wav -t 0.15 -c copy sounds/start-trimmed.wav
 ```
 
-**Change beep frequency:**
+#### Using Frequency Tones (Simple Beeps)
 
-Edit the constants at the top of `src/voice_holdtospeak.py`:
+**Switch back to frequency tones:**
 
+Edit `src/voice_holdtospeak.py` (line 30):
+```python
+BEEP_USE_WAV_FILES = False  # Use frequency tones instead
+```
+
+**Customize frequency tones:**
+
+Edit the constants (lines 35-37):
 ```python
 BEEP_START_FREQUENCY = 800  # Hz - Higher = higher pitch
 BEEP_STOP_FREQUENCY = 400   # Hz - Lower = lower pitch
 BEEP_DURATION = 0.1         # seconds
+```
+
+#### Disable All Beeps
+
+Edit `src/voice_holdtospeak.py` (line 26):
+```python
+BEEP_ENABLED = False  # Completely silent mode
+```
+
+After any changes, restart the daemon:
+```bash
+systemctl --user restart voiceclaudecli-daemon
 ```
 
 ### Desktop Notifications
