@@ -142,7 +142,7 @@ class HoldToSpeakDaemon:
 
         # Try to use the start-server.sh script
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        start_script = os.path.join(script_dir, '.whisper/scripts/start-server.sh')
+        start_script = os.path.join(script_dir, '../.whisper/scripts/start-server.sh')
 
         if os.path.exists(start_script):
             try:

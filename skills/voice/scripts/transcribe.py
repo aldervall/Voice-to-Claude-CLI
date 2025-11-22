@@ -9,10 +9,10 @@ import json
 import argparse
 
 # Add project root to path to import voice_to_claude
-# Script location: .claude/skills/voice/scripts/transcribe.py
-# Project root: ../../../.. from script location
+# Script location: skills/voice/scripts/transcribe.py
+# Project root: ../../.. from script location
 script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(script_dir, '../../../..'))
+project_root = os.path.abspath(os.path.join(script_dir, '../../..'))
 sys.path.insert(0, project_root)
 
 try:
