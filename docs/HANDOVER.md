@@ -1,12 +1,103 @@
 # Handover - VoiceType
 
-**Last Updated:** 2025-11-18 (Session 30)
-**Current Status:** ✅ Production Ready - v1.3.0+
-**Plugin Name:** `voice`
+**Last Updated:** 2025-11-24 (Session 31)
+**Current Status:** ✅ Production Ready - v2.0.0
+**Plugin Name:** `voicetype`
+**Repository:** https://github.com/aldervall/Voicetype
 
 ---
 
-## 🎯 Current Session (Session 30 - 2025-11-18)
+## 🎯 Current Session (Session 31 - 2025-11-24)
+
+### Mission: MAJOR PROJECT RENAME - Voice-to-Claude-CLI → VoiceType 🚀
+
+**User Request:** "Change name of the program/project to something that is more general. Like Voice-to-Input or something that is more common. Voice-to-ClaudeCLI is not the only function of this program."
+
+**What We Did:**
+1. ✅ **Analyzed project capabilities** - Confirmed this is a general-purpose voice typing tool, NOT Claude-specific
+2. ✅ **Selected new name** - User chose "VoiceType" (function-focused, full name command style)
+3. ✅ **Renamed core Python module** - `voice_to_claude.py` → `voice_type.py`
+4. ✅ **Updated all imports** - Changed all `from .voice_to_claude` to `from .voice_type`
+5. ✅ **Renamed all commands** - `voiceclaudecli-*` → `voicetype-*` (daemon, input, interactive, stop-server, uninstall)
+6. ✅ **Updated service file** - `voice-holdtospeak.service` → `voicetype-daemon.service`
+7. ✅ **Updated Claude Code integration** - Commands: `/voicetype`, `/voicetype-install`, `/voicetype-uninstall`
+8. ✅ **Bumped version** - v1.3.0 → v2.0.0 (BREAKING CHANGE)
+9. ✅ **Updated 30+ documentation files** - All references updated
+10. ✅ **Renamed GitHub repository** - `Voice-to-Claude-CLI` → `Voicetype`
+11. ✅ **Updated all GitHub URLs** - New repo URL throughout codebase
+
+### Changes Made
+
+#### **1. Core Python Module Rename**
+- `src/voice_to_claude.py` → `src/voice_type.py`
+- Updated docstring: "VoiceType: Local voice transcription using whisper.cpp"
+- Updated `src/__init__.py` imports and docstrings
+
+#### **2. Command Names (BREAKING CHANGE)**
+
+| Old Command | New Command |
+|-------------|-------------|
+| `voiceclaudecli-daemon` | `voicetype-daemon` |
+| `voiceclaudecli-input` | `voicetype-input` |
+| `voiceclaudecli-interactive` | `voicetype-interactive` |
+| `voiceclaudecli-stop-server` | `voicetype-stop-server` |
+| `voiceclaudecli-uninstall` | `voicetype-uninstall` |
+
+#### **3. Claude Code Integration**
+
+| Old Command | New Command |
+|-------------|-------------|
+| `/voice-claudecli` | `/voicetype` |
+| `/voice-claudecli-install` | `/voicetype-install` |
+| `/voice-claudecli-uninstall` | `/voicetype-uninstall` |
+
+- Plugin name: `voice` → `voicetype`
+- Updated skill references in `skills/voice/SKILL.md`
+
+#### **4. Configuration Files Updated**
+- `plugin.json` - name, description, version 2.0.0
+- `.claude-plugin/marketplace.json` - all metadata
+- `config/voicetype-daemon.service` - renamed and updated
+
+#### **5. Scripts Updated**
+- `scripts/install.sh` - All command names, install paths, banners
+- `scripts/uninstall.sh` - All references
+- `scripts/standalone-uninstall.sh` - All references
+- `skills/voice/scripts/transcribe.py` - Import path
+
+#### **6. GitHub Repository Renamed**
+- Old: `https://github.com/aldervall/Voice-to-Claude-CLI`
+- New: `https://github.com/aldervall/Voicetype`
+- Updated git remote and all URL references
+
+### Migration Notes for Existing Users
+
+**BREAKING CHANGE:** Users with existing installations must:
+1. Uninstall old version: `voiceclaudecli-uninstall --all`
+2. Reinstall: `bash scripts/install.sh`
+3. New commands will be `voicetype-*`
+
+### Why This Rename?
+
+The original name "Voice-to-Claude-CLI" implied the tool only worked with Claude Code. In reality:
+- ✅ Works with ANY application (text editors, browsers, terminals, etc.)
+- ✅ Types into ANY focused window via ydotool/xdotool
+- ✅ Claude Code integration is optional, not required
+- ✅ General-purpose local voice transcription
+
+**VoiceType** better reflects: "Type with your voice into any application"
+
+### Technical Details
+
+**Files Modified:** 28 files
+**Lines Changed:** 364 insertions, 362 deletions
+**Commits:**
+- `b79c5b2` - feat: Rename project to VoiceType (v2.0.0)
+- `a991e03` - chore: Update GitHub URLs after repository rename
+
+---
+
+## 📝 Previous Session (Session 30 - 2025-11-18)
 
 ### Mission: WAV FILE BEEPS - CUSTOM AUDIO FEEDBACK 🎵
 
