@@ -8,7 +8,33 @@ Local voice transcription using whisper.cpp. 100% private - no API keys or cloud
 
 ## Installation
 
-### Quick Install (3 steps!)
+### Arch Linux (AUR)
+
+```bash
+yay -S voicetype-bin
+```
+
+Then enable the daemon:
+```bash
+sudo usermod -a -G input $USER  # Required for F12 hotkey
+# Log out and back in
+systemctl --user enable --now voicetype-daemon
+```
+
+**Optional dependencies:**
+```bash
+sudo pacman -S ydotool wl-clipboard  # For auto-paste
+systemctl --user enable --now ydotool
+```
+
+---
+
+### Other Linux (via Claude Code)
+
+<details>
+<summary>Click to expand Claude Code installation</summary>
+
+#### Quick Install (3 steps!)
 
 **Step 1: Add the marketplace in Claude Code**
 
@@ -35,7 +61,7 @@ After installation, go back to `/plugin`, select "Manage plugins", find `voice`,
 
 That's it! The installer shows beautiful progress indicators and progress bars for the ~142MB model download.
 
-### Available Commands
+#### Available Commands
 
 Once installed, you have three slash commands available in Claude Code:
 
@@ -44,6 +70,8 @@ Once installed, you have three slash commands available in Claude Code:
 /voicetype-uninstall  # Complete removal of everything
 /voicetype            # Quick voice input (one-shot transcription)
 ```
+
+</details>
 
 ## Usage
 
