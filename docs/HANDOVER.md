@@ -1,13 +1,83 @@
 # Handover - VoiceType
 
-**Last Updated:** 2025-11-24 (Session 35)
-**Current Status:** ✅ Production Ready - v1.4.0
+**Last Updated:** 2025-11-24 (Session 36)
+**Current Status:** ✅ Production Ready - v1.5.0
 **Plugin Name:** `voicetype`
 **Repository:** https://github.com/aldervall/Voicetype
 
 ---
 
-## 🎯 Current Session (Session 35 - 2025-11-24)
+## 🎯 Current Session (Session 36 - 2025-11-24)
+
+### Mission: FIX AUR BUILD FAILURE & v1.5.0 RELEASE 🚀
+
+**User Request:** AUR package build failing with `install: cannot stat 'src/config.py': No such file or directory`
+
+**Root Cause:** The `src/config.py` file was added after v1.4.0 was released. PKGBUILD tried to install a file that didn't exist in the v1.4.0 tarball.
+
+**What We Did:**
+1. ✅ **Diagnosed build failure** - `git show v1.4.0:src/config.py` confirmed file missing from release
+2. ✅ **Created v1.5.0 tag** - Includes configurable hotkey support
+3. ✅ **Created GitHub release** - v1.5.0 with release notes
+4. ✅ **Updated PKGBUILD** - New version (1.5.0), new sha256sum, removed redundant install line
+5. ✅ **Created separate AUR repo** - `~/aldervall/voicetype-bin-aur` (flat structure required by AUR)
+6. ✅ **Pushed to AUR** - User pushed manually (SSH key needed)
+
+### Changes Made
+
+#### **1. v1.5.0 Release**
+- Tag: `v1.5.0`
+- Release: https://github.com/aldervall/Voicetype/releases/tag/v1.5.0
+- Includes: `src/config.py` for configurable hotkeys
+
+#### **2. PKGBUILD Updates**
+**File:** `aur/PKGBUILD`
+- `pkgver`: 1.4.0 → 1.5.0
+- `sha256sums`: Updated to new tarball hash
+- Removed redundant `install -Dm644 src/config.py` (wildcard already covers it)
+
+#### **3. AUR Repository Setup**
+**New Location:** `~/aldervall/voicetype-bin-aur/`
+- Separate from main project (AUR requires flat structure, no subdirectories)
+- Remote: `ssh://aur@aur.archlinux.org/voicetype-bin.git`
+- Contains only: `PKGBUILD`, `.SRCINFO`, `voicetype.install`
+
+### Key Learnings
+
+1. **AUR doesn't auto-sync with GitHub** - Manual update process required:
+   - Update PKGBUILD version + sha256sum
+   - Regenerate .SRCINFO: `makepkg --printsrcinfo > .SRCINFO`
+   - Commit and push to AUR remote
+
+2. **AUR repo must be flat** - No subdirectories allowed (error: "the repository must not contain subdirectories")
+
+3. **Release timing matters** - PKGBUILD must reference files that exist in the tagged release
+
+### Workflow for Future Updates
+
+```bash
+# 1. Push code to GitHub
+git push origin main
+
+# 2. Create release tag
+git tag -a v1.X.0 -m "vX.X.0: Description"
+git push origin v1.X.0
+gh release create v1.X.0 --title "vX.X.0: Title" --notes "..."
+
+# 3. Get new sha256sum
+curl -sL "https://github.com/aldervall/Voicetype/archive/v1.X.0.tar.gz" | sha256sum
+
+# 4. Update AUR repo
+cd ~/aldervall/voicetype-bin-aur
+# Edit PKGBUILD (pkgver, sha256sums)
+makepkg --printsrcinfo > .SRCINFO
+git add -A && git commit -m "Update to vX.X.0"
+git push aur master
+```
+
+---
+
+## 📜 Previous Session (Session 35 - 2025-11-24)
 
 ### Mission: AUR PACKAGE FOR ARCH LINUX 📦
 
