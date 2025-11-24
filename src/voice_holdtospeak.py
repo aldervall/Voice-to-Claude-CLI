@@ -215,12 +215,22 @@ class HoldToSpeakDaemon:
         print("⚠ whisper server not running. Attempting to start local server...")
 
         # Try to use the start-server.sh script
-        # Get project root (this file is in src/, project root is one level up)
+        # Check multiple possible locations (dev and AUR package)
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.abspath(os.path.join(script_dir, '..'))
-        start_script = os.path.join(project_root, '.whisper/scripts/start-server.sh')
 
-        if os.path.exists(start_script):
+        start_script_candidates = [
+            os.path.join(project_root, '.whisper/scripts/start-server.sh'),  # Dev
+            os.path.join(script_dir, 'whisper/scripts/start-server.sh'),     # AUR: /usr/lib/voicetype/whisper/
+        ]
+
+        start_script = None
+        for candidate in start_script_candidates:
+            if os.path.exists(candidate):
+                start_script = candidate
+                break
+
+        if start_script:
             try:
                 # Run start script in background
                 subprocess.Popen(['bash', start_script],
@@ -245,7 +255,9 @@ class HoldToSpeakDaemon:
                 print(f"✗ Failed to start server: {e}")
                 return False
         else:
-            print(f"✗ Start script not found: {start_script}")
+            print(f"✗ Start script not found in any of these locations:")
+            for candidate in start_script_candidates:
+                print(f"   - {candidate}")
             return False
 
     def find_keyboard_devices(self):
