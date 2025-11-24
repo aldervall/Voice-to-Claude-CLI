@@ -7,26 +7,36 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN_DIR="$SCRIPT_DIR/../bin"
 MODELS_DIR="$SCRIPT_DIR/../models"
 
-# Detect architecture
+# Detect architecture and find binary
 ARCH=$(uname -m)
+BINARY=""
+
+# Check for architecture-specific binary first, then generic name (AUR package)
 case "$ARCH" in
     x86_64)
-        BINARY="$BIN_DIR/whisper-server-linux-x64"
+        if [ -f "$BIN_DIR/whisper-server-linux-x64" ]; then
+            BINARY="$BIN_DIR/whisper-server-linux-x64"
+        elif [ -f "$BIN_DIR/whisper-server" ]; then
+            BINARY="$BIN_DIR/whisper-server"
+        fi
         ;;
     aarch64|arm64)
-        BINARY="$BIN_DIR/whisper-server-linux-arm64"
+        if [ -f "$BIN_DIR/whisper-server-linux-arm64" ]; then
+            BINARY="$BIN_DIR/whisper-server-linux-arm64"
+        elif [ -f "$BIN_DIR/whisper-server" ]; then
+            BINARY="$BIN_DIR/whisper-server"
+        fi
         ;;
     *)
         echo "Error: Unsupported architecture: $ARCH"
         echo "Supported: x86_64, aarch64/arm64"
-        echo "Run: bash .whisper/scripts/install-binary.sh to build from source"
         exit 1
         ;;
 esac
 
-# Check if binary exists
-if [ ! -f "$BINARY" ]; then
-    echo "Error: whisper-server binary not found: $BINARY"
+# Check if binary was found
+if [ -z "$BINARY" ] || [ ! -f "$BINARY" ]; then
+    echo "Error: whisper-server binary not found in: $BIN_DIR"
     echo "Run: bash .whisper/scripts/install-binary.sh to build from source"
     exit 1
 fi
