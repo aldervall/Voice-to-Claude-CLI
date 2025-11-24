@@ -33,7 +33,19 @@ BEEP_ENABLED = _config["audio"]["beep_enabled"]
 # Audio feedback options - choose one:
 # Option 1: Use WAV files (set BEEP_USE_WAV_FILES = True)
 BEEP_USE_WAV_FILES = _config["audio"]["beep_use_wav_files"]
-BEEP_START_SOUND = os.path.join(os.path.dirname(__file__), '../sounds/start.wav')
+
+def _find_sound_file(filename):
+    """Find sound file in multiple possible locations (dev and AUR package)"""
+    candidates = [
+        os.path.join(os.path.dirname(__file__), '..', 'sounds', filename),  # Dev: src/../sounds/
+        os.path.join(os.path.dirname(__file__), 'sounds', filename),        # AUR: /usr/lib/voicetype/sounds/
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    return candidates[0]  # Fallback to first path
+
+BEEP_START_SOUND = _find_sound_file('start.wav')
 BEEP_STOP_SOUND = None  # None = use frequency tone for stop beep
 
 # Option 2: Use frequency tones (set BEEP_USE_WAV_FILES = False)
