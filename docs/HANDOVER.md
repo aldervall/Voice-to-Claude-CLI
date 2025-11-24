@@ -1,13 +1,51 @@
 # Handover - VoiceType
 
-**Last Updated:** 2025-11-24 (Session 37)
-**Current Status:** ✅ Production Ready - v1.5.0
+**Last Updated:** 2025-11-24 (Session 38)
+**Current Status:** ✅ Production Ready - v1.5.3
 **Plugin Name:** `voicetype`
 **Repository:** https://github.com/aldervall/Voicetype
 
 ---
 
-## 🎯 Current Session (Session 37 - 2025-11-24)
+## 🎯 Current Session (Session 38 - 2025-11-24)
+
+### Mission: FIX TRANSCRIPTION FAILURES & IMPROVE UX 🔧
+
+**User Report:** "No speech detected" errors when using daemon mode
+
+**What We Did:**
+1. ✅ **Diagnosed FFmpeg conversion error** - `--convert` flag was causing failures
+2. ✅ **Fixed start-server.sh** - Removed `--convert` flag (audio is already correct format)
+3. ✅ **Released v1.5.3** - Pushed to GitHub and AUR
+4. ✅ **Improved post-install instructions** - Cleaner, more visible setup steps
+5. ✅ **Released v1.5.3-2** - Updated install message in AUR
+
+### Root Cause Analysis
+
+The `--convert` flag in whisper-server tries to use FFmpeg to convert audio, but:
+- Audio from sounddevice is already 16kHz mono WAV (correct format)
+- FFmpeg conversion was failing with `FFmpeg conversion failed` error
+- Removing the flag lets whisper accept the audio directly
+
+### Changes Made
+
+#### **1. Start Server Script**
+**File:** `.whisper/scripts/start-server.sh`
+- Removed `--convert` flag from whisper-server arguments
+
+#### **2. Post-Install Instructions**
+**File:** `aur/voicetype.install`
+- Simplified from verbose to scannable format
+- Made logout requirement impossible to miss (⚡ warning)
+- Grouped ydotool + wl-clipboard as single recommended install
+
+### AUR Package Updates
+- **v1.5.3** - Fix for --convert flag
+- **v1.5.3-2** - Improved post-install instructions
+
+---
+
+## Previous Session (Session 37 - 2025-11-24)
 
 ### Mission: AUTOMATED RELEASE WORKFLOW 🚀
 
