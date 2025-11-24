@@ -1,13 +1,60 @@
 # Handover - VoiceType
 
-**Last Updated:** 2025-11-24 (Session 36)
+**Last Updated:** 2025-11-24 (Session 37)
 **Current Status:** ✅ Production Ready - v1.5.0
 **Plugin Name:** `voicetype`
 **Repository:** https://github.com/aldervall/Voicetype
 
 ---
 
-## 🎯 Current Session (Session 36 - 2025-11-24)
+## 🎯 Current Session (Session 37 - 2025-11-24)
+
+### Mission: AUTOMATED RELEASE WORKFLOW 🚀
+
+**User Request:** "Make it easier for me to update directly to git and make it available on the AUR at the same time"
+
+**What We Did:**
+1. ✅ **Created automated release script** - `scripts/release.sh`
+2. ✅ **Consolidated duplicate PKGBUILD files** - Removed root-level copies, kept `/aur/` only
+3. ✅ **Verified dependencies** - gh CLI and makepkg available
+
+### Changes Made
+
+#### **1. Release Automation Script**
+**File:** `scripts/release.sh`
+
+Single command to release to both GitHub and AUR:
+```bash
+./scripts/release.sh 1.6.0
+```
+
+**Automated steps:**
+1. Validate prerequisites (gh CLI, makepkg, clean tree, main branch)
+2. Update PKGBUILD version and reset pkgrel
+3. Commit and tag
+4. Push to GitHub origin
+5. Create GitHub release
+6. Calculate SHA256 from tarball
+7. Update PKGBUILD sha256sums
+8. Generate .SRCINFO via makepkg
+9. Push to AUR via git subtree
+
+#### **2. File Cleanup**
+- **Removed:** `/PKGBUILD` (duplicate)
+- **Removed:** `/.SRCINFO` (duplicate)
+- **Kept:** `/aur/PKGBUILD` and `/aur/.SRCINFO` (canonical location)
+
+### Requirements for Release Script
+- `gh` CLI installed and authenticated
+- SSH key configured for AUR (`ssh-add ~/.ssh/your-aur-key`)
+- On main branch with clean working tree
+
+### Commit
+- `3cbfad2` - feat: Add automated release script for GitHub + AUR
+
+---
+
+## 📜 Previous Session (Session 36 - 2025-11-24)
 
 ### Mission: FIX AUR BUILD FAILURE & v1.5.0 RELEASE 🚀
 
