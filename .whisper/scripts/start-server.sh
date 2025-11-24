@@ -67,7 +67,6 @@ echo "Endpoint: http://127.0.0.1:2022/v1/audio/transcriptions"
     --inference-path "/v1/audio/transcriptions" \
     --threads 4 \
     --processors 1 \
-    --convert \
     --print-progress &
 
 # Wait for server to start
