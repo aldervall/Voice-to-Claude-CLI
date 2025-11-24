@@ -7,6 +7,53 @@
 
 ---
 
+## 🔧 Development Workflow
+
+### Software Updates (GitHub)
+
+```bash
+cd ~/aldervall/Voice-to-Claude-CLI
+
+# Edit Python source code
+vim src/voice_holdtospeak.py
+
+# Test changes
+source venv/bin/activate
+systemctl --user restart voicetype-daemon
+
+# Commit and push to GitHub
+git add -A
+git commit -m "feat: your feature"
+git push origin main
+```
+
+### AUR Package Updates
+
+```bash
+cd ~/aldervall/Voice-to-Claude-CLI/aur
+
+# Update version and sha256sum
+vim PKGBUILD
+
+# For new releases, get sha256:
+curl -sL https://github.com/aldervall/Voicetype/archive/v1.6.0.tar.gz | sha256sum
+
+# Regenerate metadata
+makepkg --printsrcinfo > .SRCINFO
+
+# Test locally
+makepkg -si
+
+# Push to AUR
+git add PKGBUILD .SRCINFO
+git commit -m "Update to v1.6.0"
+git push origin master
+```
+
+**Note:** The `aur/` directory is a separate git repository that pushes directly to AUR.
+
+---
+
 ## 🎯 Current Session (Session 38 - 2025-11-24)
 
 ### Mission: FIX AUR PACKAGE IMPORT ERROR 🔧
