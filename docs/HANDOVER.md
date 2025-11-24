@@ -1,13 +1,46 @@
 # Handover - VoiceType
 
-**Last Updated:** 2025-11-24 (Session 31)
+**Last Updated:** 2025-11-24 (Session 32)
 **Current Status:** ✅ Production Ready - v2.0.0
 **Plugin Name:** `voicetype`
 **Repository:** https://github.com/aldervall/Voicetype
 
 ---
 
-## 🎯 Current Session (Session 31 - 2025-11-24)
+## 🎯 Current Session (Session 32 - 2025-11-24)
+
+### Mission: README CLEANUP & v2.0.0 RELEASE 🚀
+
+**What We Did:**
+1. ✅ **Removed outdated screenshots from README** - Deleted Plugin.AddMarket.png and Plugin.Enable.png references
+2. ✅ **Committed changes** - `eaf276c` docs: Remove outdated screenshots from README
+3. ✅ **Pushed to origin** - Changes live on GitHub
+4. ✅ **Created GitHub Release v2.0.0** - "VoiceType Rebrand" release marking the major rename
+
+### Changes Made
+
+#### **1. README.md Cleanup**
+- Removed `![Add Marketplace](docs/images/Plugin.AddMarket.png)`
+- Removed `![Enable Plugin](docs/images/Plugin.Enable.png)`
+- Images were outdated and no longer matched current Claude Code UI
+
+#### **2. GitHub Release v2.0.0**
+- **Title:** v2.0.0 - VoiceType Rebrand 🎤
+- **URL:** https://github.com/aldervall/Voicetype/releases/tag/v2.0.0
+- **Highlights:**
+  - Project renamed from Voice-to-Claude-CLI to VoiceType
+  - New repository URL
+  - All voicetype-* commands
+  - Breaking changes documented
+
+### Commit Information
+- **Commit:** `eaf276c`
+- **Branch:** main
+- **Status:** ✅ Pushed to origin/main
+
+---
+
+## 🎯 Previous Session (Session 31 - 2025-11-24)
 
 ### Mission: MAJOR PROJECT RENAME - Voice-to-Claude-CLI → VoiceType 🚀
 
